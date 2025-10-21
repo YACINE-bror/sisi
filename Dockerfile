@@ -5,7 +5,8 @@
 FROM node:18 AS node-builder
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm ci --silent
+# Use npm install as a fallback when package-lock.json is absent
+RUN if [ -f package-lock.json ]; then npm ci --silent; else npm install --silent; fi
 COPY resources resources
 COPY vite.config.js postcss.config.js tailwind.config.js ./
 RUN npm run build
@@ -41,7 +42,7 @@ WORKDIR /var/www/html
 COPY --from=vendor-builder /app /var/www/html
 
 # Copy built frontend assets
-COPY --from=node-builder /app/dist public/build
+COPY --from=node-builder /app/public/build public/build
 
 # Create storage and cache directories and set permissions
 RUN mkdir -p storage/framework storage/logs bootstrap/cache \
